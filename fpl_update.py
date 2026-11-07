@@ -9,6 +9,8 @@ Usage:
   python fpl_update.py                 # players + fixtures
   python fpl_update.py --top 80        # also per-gameweek history of the 80 highest scoring players
   python fpl_update.py --out moje.json # different output file name
+  python fpl_update.py --keep-summaries old.json
+                                       # light update: keep player histories from old.json
 """
 import argparse
 import json
@@ -74,6 +76,8 @@ def main():
     ap.add_argument("--top", type=int, default=0,
                     help="also fetch per-gameweek history for the N highest scoring players")
     ap.add_argument("--out", default="fpl_data.json", help="output file (default fpl_data.json)")
+    ap.add_argument("--keep-summaries", metavar="FILE",
+                    help="without --top: copy player histories (summaries) from this existing file")
     ap.add_argument("--base", default=BASE, help=argparse.SUPPRESS)  # used for testing
     args = ap.parse_args()
 
@@ -83,6 +87,7 @@ def main():
     fixtures = get(f"{args.base}/fixtures/")
 
     summaries = {}
+    summaries_fetched_at = None
     if args.top > 0:
         best = sorted(boot["elements"], key=lambda p: -p["total_points"])[: args.top]
         for i, p in enumerate(best, 1):
@@ -91,12 +96,23 @@ def main():
             summaries[str(p["id"])] = {"name": p["web_name"], "history": data.get("history", [])}
             time.sleep(0.3)  # be polite to the server
         print()
+        summaries_fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    elif args.keep_summaries:
+        try:
+            with open(args.keep_summaries, encoding="utf-8") as f:
+                old = json.load(f)
+            summaries = old.get("summaries") or {}
+            summaries_fetched_at = old.get("summaries_fetched_at") or (old.get("fetched_at") if summaries else None)
+            print(f"Kept {len(summaries)} player histories from {args.keep_summaries}")
+        except (OSError, ValueError) as err:
+            print(f"Could not read {args.keep_summaries}, no histories kept ({err})")
 
     out = {
         "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "bootstrap": boot,
         "fixtures": fixtures,
         "summaries": summaries,
+        "summaries_fetched_at": summaries_fetched_at,
     }
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False)

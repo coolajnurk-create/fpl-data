@@ -2,10 +2,10 @@ name: Update FPL data
 
 on:
   schedule:
-    # Light update (bootstrap + fixtures, 2 requests) every 2 hours
-    - cron: "0 */2 * * *"
-    # Full update (--top 100, ~102 requests) twice a day, 05:30 and 17:30 UTC
-    - cron: "30 5,17 * * *"
+    # Light update (bootstrap + fixtures, 2 requests) every 20 minutes
+    - cron: "7,27,47 * * * *"
+    # Full update (--top 100, ~102 requests) every 3 hours at :30 UTC
+    - cron: "30 */3 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             mode="${{ inputs.mode }}"
-          elif [ "${{ github.event.schedule }}" = "30 5,17 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "30 */3 * * *" ]; then
             mode="full"
           else
             mode="light"

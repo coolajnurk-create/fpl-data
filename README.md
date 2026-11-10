@@ -1,5 +1,14 @@
 # fpl-data
 
+## For Claude / chat assistants (read this first)
+
+Small league file (standings, per-gameweek table, every manager's history, latest picks, transfers): https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/league.json
+Big file (players, fixtures, histories of the top 100 players, plus the same league data): https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
+
+Both live on the `data` branch, not on `main`. They are updated automatically, so the link never changes. Paste the raw link into the chat, do not just say "use this repo".
+
+Mini-league Holand Company (ID 322114). In league.json: `standings` is the table, `per_gw` has each gameweek's net points and rank inside the league, `managers.<entry id>` has history, chips, picks and transfers.
+
 Podaci su u `fpl_data.json` na grani `data`: https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
 
 ## Where the files are
@@ -11,7 +20,7 @@ Podaci su u `fpl_data.json` na grani `data`: https://raw.githubusercontent.com/c
 
 ## Mini-league Holand Company (league ID 322114)
 
-The files in `league/` on `main` are one-time snapshots and do not update by themselves. Snapshot taken: 2026-11-08 18:38 UTC
+The files in `league/` on `main` are one-time snapshots and do not update by themselves. Snapshot taken: 2026-11-08 18:38 UTC (old snapshot, use league.json on the data branch instead)
 
 - Standings table: `league/standings.json`, live: https://fantasy.premierleague.com/api/leagues-classic/322114/standings/
 

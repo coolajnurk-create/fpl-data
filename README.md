@@ -1,19 +1,30 @@
 # fpl-data
 
-## For Claude / chat assistants (read this first)
+## Instructions for AI assistants (read this first)
 
-Small league file (standings, per-gameweek table, every manager's history, latest picks, transfers): https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/league.json
-Big file (players, fixtures, histories of the top 100 players, plus the same league data): https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
+If the user asks about the mini league (standings, who is first, gameweek points, chips, transfers, a manager's team), open ONLY this file and nothing else:
+https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/league.json
 
-Both live on the `data` branch, not on `main`. They are updated automatically, so the link never changes. Paste the raw link into the chat, do not just say "use this repo".
+It is small (about 100 KB) and updates automatically. DO NOT open fpl_data.json for league questions: it is 3.3 MB and often fails to load. Do not guess. If league.json does not load, say so and ask the user to paste its content.
 
-Mini-league Holand Company (ID 322114). In league.json: `standings` is the table, `per_gw` has each gameweek's net points and rank inside the league, `managers.<entry id>` has history, chips, picks and transfers.
+Only for player and fixture questions (prices, form, ownership, xGI, fixtures), use:
+https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
 
-Podaci su u `fpl_data.json` na grani `data`: https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
+Both files are on the `data` branch, not on `main`.
+
+How to read league.json: `standings` is the current table. `per_gw` is a list with one entry per gameweek: net points of each manager (after transfer hits) and rank inside the league. `managers.<entry id>` has history, chips, picks of the latest gameweek and transfers.
+
+Who is who (league Holand Company, ID 322114):
+- baklava taktika = Ajnur Kurtović, entry 2124129
+- ManUtd = Amar Aganović, entry 1479223
+- deva_utd = Emir Devic, entry 2757164
+- Ne_da_mi_igrica = Ajdin Beg, entry 1742021
+- Sedrenik FC (user may call it "Sedrenik city") = Admir Kurtovic, entry 1696365
+- Royal Kings 8881832, Beton Ligaši 1699329, VAR 3023199, Irgeti FC 1849551, Pomahnitali 2741325, Mustajbegalickog 1918336
 
 ## Where the files are
 
-- Player and fixture data (auto-updated): `fpl_data.json` on the `data` branch: https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
+- Player and fixture data (auto-updated, large, 3.3 MB): `fpl_data.json` on the `data` branch: https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
 - Updater script: `fpl_update.py` on the `main` branch
 - Workflow: `.github/workflows/update.yml` on the `main` branch
 - Schedule (UTC): light update every 20 minutes at :07, :27 and :47, full update every 3 hours at :30

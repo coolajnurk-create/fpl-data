@@ -11,6 +11,9 @@ Usage:
   python fpl_update.py --out moje.json # different output file name
   python fpl_update.py --keep-summaries old.json
                                        # light update: keep player histories from old.json
+  python fpl_update.py --league 322114 --league-out league.json
+                                       # also mini-league standings, manager histories, picks,
+                                       # transfers and a per-gameweek table (league.json = small file)
 """
 import argparse
 import json
@@ -47,6 +50,84 @@ def local_tz():
         return timezone(timedelta(hours=1))
 
 
+def try_get(url):
+    """Like get(), but returns None instead of stopping the script (used for league extras)."""
+    try:
+        return get(url, retries=2)
+    except SystemExit as err:
+        print(f"  skipped {url} ({err})")
+        return None
+
+
+def build_league(base, league_id, boot, old_league, full):
+    """Mini-league standings (always) plus per-manager details (only on full runs)."""
+    cur = next((e for e in boot["events"] if e.get("is_current")), None)
+    cur_gw = cur["id"] if cur else None
+
+    print(f"Downloading league {league_id} standings...")
+    results, name, page = [], None, 1
+    while page <= 5:
+        data = try_get(f"{base}/leagues-classic/{league_id}/standings/?page_standings={page}")
+        if not data:
+            break
+        name = data["league"]["name"]
+        results += data["standings"]["results"]
+        if not data["standings"].get("has_next"):
+            break
+        page += 1
+    if not results:
+        return old_league  # keep whatever we had
+
+    standings = [
+        {"rank": r["rank"], "last_rank": r["last_rank"], "entry": r["entry"],
+         "team": r["entry_name"], "manager": r["player_name"],
+         "event_total": r["event_total"], "total": r["total"]}
+        for r in results
+    ]
+    managers = {}
+    old_managers = (old_league or {}).get("managers") or {}
+    managers_fetched_at = (old_league or {}).get("managers_fetched_at")
+
+    if full:
+        for i, r in enumerate(results, 1):
+            e = r["entry"]
+            print(f"  manager {i}/{len(results)}: {r['entry_name']}", end="\r")
+            hist = try_get(f"{base}/entry/{e}/history/") or {}
+            picks = try_get(f"{base}/entry/{e}/event/{cur_gw}/picks/") if cur_gw else None
+            transfers = try_get(f"{base}/entry/{e}/transfers/")
+            managers[str(e)] = {
+                "history": {"current": hist.get("current", []), "chips": hist.get("chips", [])},
+                "picks": {"event": cur_gw, **picks} if picks else None,
+                "transfers": transfers,
+            }
+            time.sleep(0.3)
+        print()
+        managers_fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    else:
+        managers = {k: v for k, v in old_managers.items() if int(k) in {r["entry"] for r in results}}
+
+    # Per-gameweek table: net points (after transfer hits) and rank among the league's managers
+    per_gw = []
+    gws = sorted({h["event"] for m in managers.values() for h in m["history"]["current"]})
+    for gw in gws:
+        net = {}
+        for e, m in managers.items():
+            h = next((x for x in m["history"]["current"] if x["event"] == gw), None)
+            if h:
+                net[e] = h["points"] - h["event_transfers_cost"]
+        order = sorted(net, key=lambda e: -net[e])
+        ranks = {e: 1 + sum(1 for o in net if net[o] > net[e]) for e in order}
+        per_gw.append({"gw": gw, "net_points": net, "rank_in_league": ranks,
+                       "best_entry": order[0] if order else None,
+                       "best_points": net[order[0]] if order else None})
+
+    return {
+        "id": league_id, "name": name, "current_gw": cur_gw,
+        "standings": standings, "managers": managers,
+        "managers_fetched_at": managers_fetched_at, "per_gw": per_gw,
+    }
+
+
 def print_summary(boot, fixtures):
     tz = local_tz()
     cur = next((e for e in boot["events"] if e.get("is_current")), None)
@@ -78,6 +159,10 @@ def main():
     ap.add_argument("--out", default="fpl_data.json", help="output file (default fpl_data.json)")
     ap.add_argument("--keep-summaries", metavar="FILE",
                     help="without --top: copy player histories (summaries) from this existing file")
+    ap.add_argument("--league", type=int, default=0, metavar="ID",
+                    help="also download this classic mini league (standings, histories, picks, transfers)")
+    ap.add_argument("--league-out", metavar="FILE",
+                    help="also write the league data alone to this small file")
     ap.add_argument("--base", default=BASE, help=argparse.SUPPRESS)  # used for testing
     args = ap.parse_args()
 
@@ -107,6 +192,17 @@ def main():
         except (OSError, ValueError) as err:
             print(f"Could not read {args.keep_summaries}, no histories kept ({err})")
 
+    league = None
+    if args.league:
+        old_league = None
+        if args.keep_summaries:
+            try:
+                with open(args.keep_summaries, encoding="utf-8") as f:
+                    old_league = json.load(f).get("league")
+            except (OSError, ValueError):
+                pass
+        league = build_league(args.base, args.league, boot, old_league, full=args.top > 0)
+
     out = {
         "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "bootstrap": boot,
@@ -114,6 +210,11 @@ def main():
         "summaries": summaries,
         "summaries_fetched_at": summaries_fetched_at,
     }
+    if league:
+        out["league"] = league
+        if args.league_out:
+            with open(args.league_out, "w", encoding="utf-8") as f:
+                json.dump({"fetched_at": out["fetched_at"], **league}, f, ensure_ascii=False)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False)
     size_mb = len(json.dumps(out, ensure_ascii=False)) / 1_000_000

@@ -61,9 +61,9 @@ jobs:
       - name: Download FPL data
         run: |
           if [ "${{ steps.mode.outputs.mode }}" = "full" ]; then
-            python fpl_update.py --top 100 --out "$RUNNER_TEMP/new.json"
+            python fpl_update.py --top 100 --league 322114 --league-out "$RUNNER_TEMP/league.json" --out "$RUNNER_TEMP/new.json"
           else
-            python fpl_update.py --keep-summaries "$RUNNER_TEMP/old.json" --out "$RUNNER_TEMP/new.json"
+            python fpl_update.py --keep-summaries "$RUNNER_TEMP/old.json" --league 322114 --league-out "$RUNNER_TEMP/league.json" --out "$RUNNER_TEMP/new.json"
           fi
 
       - name: Publish to data branch (one commit, force-push)
@@ -79,9 +79,10 @@ jobs:
           cd publish
           git init -q -b data
           cp ../new.json fpl_data.json
+          cp ../league.json league.json
           git config user.name "fpl-bot"
           git config user.email "fpl-bot@users.noreply.github.com"
-          git add fpl_data.json
+          git add fpl_data.json league.json
           git commit -q -m "FPL data ${{ steps.mode.outputs.mode }} $(date -u '+%F %H:%M') UTC"
           git push --force -q "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" data
           echo "Published to the data branch"

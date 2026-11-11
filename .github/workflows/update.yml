@@ -65,6 +65,7 @@ jobs:
           else
             python fpl_update.py --keep-summaries "$RUNNER_TEMP/old.json" --league 322114 --league-out "$RUNNER_TEMP/league.json" --out "$RUNNER_TEMP/new.json"
           fi
+          python make_page.py "$RUNNER_TEMP/new.json" "$RUNNER_TEMP/site"
 
       - name: Publish to data branch (one commit, force-push)
         env:
@@ -80,9 +81,11 @@ jobs:
           git init -q -b data
           cp ../new.json fpl_data.json
           cp ../league.json league.json
+          cp ../site/*.html .
+          touch .nojekyll
           git config user.name "fpl-bot"
           git config user.email "fpl-bot@users.noreply.github.com"
-          git add fpl_data.json league.json
+          git add -A
           git commit -q -m "FPL data ${{ steps.mode.outputs.mode }} $(date -u '+%F %H:%M') UTC"
           git push --force -q "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" data
           echo "Published to the data branch"

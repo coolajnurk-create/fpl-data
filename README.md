@@ -2,17 +2,18 @@
 
 ## Instructions for AI assistants (read this first)
 
-If the user asks about the mini league (standings, who is first, gameweek points, chips, transfers, a manager's team), open ONLY this file and nothing else:
-https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/league.json
+All the information is on a small website, updated automatically every few hours. Open the start page and read it:
+https://coolajnurk-create.github.io/fpl-data/
 
-It is small (about 100 KB) and updates automatically. DO NOT open fpl_data.json for league questions: it is 3.3 MB and often fails to load. Do not guess. If league.json does not load, say so and ask the user to paste its content.
+The start page is a summary (Holand Company mini league table, points per gameweek for every manager with rank in the league, chips used, every manager's current squad with captain, injury flags, top players). It links to pages with ALL the data as plain HTML tables, in the same domain:
+- league_full.html: standings, and for every manager the full history, chips, picks and all transfers
+- players_gk.html, players_def.html, players_mid.html, players_fwd.html: every player with every field
+- fixtures.html: all fixtures, results, FDR, goal scorers and assists
+- history_gk.html, history_def.html, history_mid.html, history_fwd.html: gameweek-by-gameweek stats of the top 100 players
+- teams_events.html: teams, gameweeks and a glossary of field names
+If the user asks about the league or their team, answer from these pages. Do not guess. If a page does not load, say so and ask the user to paste its text.
 
-Only for player and fixture questions (prices, form, ownership, xGI, fixtures), use:
-https://raw.githubusercontent.com/coolajnurk-create/fpl-data/data/fpl_data.json
-
-Both files are on the `data` branch, not on `main`.
-
-How to read league.json: `standings` is the current table. `per_gw` is a list with one entry per gameweek: net points of each manager (after transfer hits) and rank inside the league. `managers.<entry id>` has history, chips, picks of the latest gameweek and transfers.
+Raw JSON (only if you can run code): https://coolajnurk-create.github.io/fpl-data/league.json and https://coolajnurk-create.github.io/fpl-data/fpl_data.json (3.3 MB, often fails to load in chat tools). They are also on the `data` branch.
 
 Who is who (league Holand Company, ID 322114):
 - baklava taktika = Ajnur Kurtović, entry 2124129
